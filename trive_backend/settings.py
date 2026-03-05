@@ -7,6 +7,7 @@ from pathlib import Path
 from decouple import config, Csv
 from datetime import timedelta
 import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -97,14 +98,11 @@ WSGI_APPLICATION = 'trive_backend.wsgi.application'
 # DATABASE - PostgreSQL
 # =============================================================================
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('PGDATABASE'),
-        'USER': os.environ.get('PGUSER'),
-        'PASSWORD': os.environ.get('PGPASSWORD'),
-        'HOST': os.environ.get('PGHOST'),
-        'PORT': os.environ.get('PGPORT'),
-    }
+    'default': dj_database_url.parse(
+        os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
 # =============================================================================
