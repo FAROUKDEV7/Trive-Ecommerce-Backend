@@ -1,22 +1,25 @@
+# create_superuser.py
 import os
 import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "trive_backend.settings")
 django.setup()
 
-from django.contrib.auth import get_user_model
+from apps.users.models import User
 
-User = get_user_model()
+email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
+password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
+first_name = "Admin"
+last_name = "User"
 
-username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "admin")
-email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "admin@gmail.com")
-password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "12345678")
-
-if not User.objects.filter(username=username).exists():
-    User.objects.create_superuser(username=username, email=email, password=password)
-    print("Superuser created successfully!")
+# لو مستخدم بالفعل
+if not User.objects.filter(email=email).exists():
+    User.objects.create_superuser(
+        email=email,
+        password=password,
+        first_name=first_name,
+        last_name=last_name
+    )
+    print(f"Superuser {email} created.")
 else:
-    u = User.objects.get(username=username)
-    u.set_password(password)
-    u.save()
-    print("Superuser already exists. Password updated!")
+    print(f"Superuser {email} already exists.")
