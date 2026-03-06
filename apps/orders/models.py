@@ -2,6 +2,7 @@ from django.db import models
 from apps.users.models import User, Address
 from apps.products.models import Product, ProductVariant
 import uuid
+from cloudinary.models import CloudinaryField
 
 
 class Order(models.Model):
@@ -83,7 +84,7 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, blank=True)
     product_name = models.CharField(max_length=255)  # snapshot
-    product_image = models.URLField(blank=True)  # snapshot
+    product_image = CloudinaryField("image")
     variant_details = models.JSONField(default=dict, blank=True)  # snapshot of size/color
     quantity = models.PositiveIntegerField()
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)

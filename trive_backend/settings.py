@@ -29,6 +29,8 @@ DJANGO_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    "cloudinary",
+    "cloudinary_storage",
 ]
 
 THIRD_PARTY_APPS = [
@@ -316,3 +318,14 @@ else:
             'level': 'INFO',
         },
     }
+
+# Media files
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+
+
+# Cloudinary config
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
+    "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
+}
