@@ -20,9 +20,8 @@ class CategorySerializer(serializers.ModelSerializer):
         return obj.products.filter(status='active').count()
 
     def get_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image and request:
-            return request.build_absolute_uri(obj.image.url)
+        if obj.image:
+            return obj.image.url
         return None
 
 
