@@ -143,12 +143,18 @@ def create_order(request):
         # Create order items
         if use_backend_cart:
             for item in cart_items_data:
+                # Safely get image URL — Django ImageField raises ValueError if no file is set
+                try:
+                    product_image_url = item.product.primary_image.url if item.product.primary_image and item.product.primary_image.name else ''
+                except Exception:
+                    product_image_url = ''
+
                 OrderItem.objects.create(
                     order=order,
                     product=item.product,
                     variant=item.variant,
                     product_name=item.product.name,
-                    product_image=item.product.primary_image.url if hasattr(item.product.primary_image, 'url') else '',
+                    product_image=product_image_url,
                     quantity=item.quantity,
                     unit_price=item.unit_price,
                     line_total=item.line_total,
