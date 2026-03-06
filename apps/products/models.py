@@ -3,12 +3,11 @@ from django.utils.text import slugify
 import uuid
 from cloudinary.models import CloudinaryField
 
-
 class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
-    image = CloudinaryField("image")
+    image = CloudinaryField('categories')
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True, related_name='subcategories'
     )
@@ -106,7 +105,7 @@ class Product(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    image = CloudinaryField("image")
+    image = CloudinaryField('image')
     alt_text = models.CharField(max_length=255, blank=True)
     is_primary = models.BooleanField(default=False)
     sort_order = models.PositiveIntegerField(default=0)
