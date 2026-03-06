@@ -5,7 +5,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
-from django.template.loader import render_to_string
+import threading
 
 from .models import User, Address
 from .serializers import (
@@ -23,6 +23,24 @@ def get_tokens_for_user(user):
     }
 
 
+def _send_email_async(subject, message, from_email, recipient_list):
+    """Send email in a background thread so it never blocks the HTTP response."""
+    def _send():
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+    thread = threading.Thread(target=_send, daemon=True)
+    thread.start()
+
+
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
@@ -32,11 +50,15 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        # Send verification email
-        try:
-            self._send_verification_email(user, request)
-        except Exception:
-            pass  # Don't fail registration if email fails
+        # Send verification email in background — does NOT block response
+        token = user.verification_token
+        verify_url = f"{settings.FRONTEND_URL}/verify-email/{token}"
+        _send_email_async(
+            subject='Verify your TRIVÉ account',
+            message=f'Hi {user.first_name},\n\nPlease verify your email: {verify_url}\n\nThis link expires in 24 hours.',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+        )
 
         tokens = get_tokens_for_user(user)
         return Response({
@@ -45,17 +67,6 @@ class RegisterView(generics.CreateAPIView):
             'user': UserSerializer(user, context={'request': request}).data,
             'tokens': tokens,
         }, status=status.HTTP_201_CREATED)
-
-    def _send_verification_email(self, user, request):
-        token = user.verification_token
-        verify_url = f"{settings.FRONTEND_URL}/verify-email/{token}"
-        send_mail(
-            subject='Verify your TRIVÉ account',
-            message=f'Hi {user.first_name},\n\nPlease verify your email: {verify_url}\n\nThis link expires in 24 hours.',
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=True,
-        )
 
 
 class LoginView(generics.GenericAPIView):
@@ -120,12 +131,11 @@ def resend_verification(request):
     user.generate_verification_token()
     token = user.verification_token
     verify_url = f"{settings.FRONTEND_URL}/verify-email/{token}"
-    send_mail(
+    _send_email_async(
         subject='Verify your TRIVÉ account',
         message=f'Hi {user.first_name},\n\nPlease verify your email: {verify_url}',
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],
-        fail_silently=True,
     )
     return Response({'success': True, 'message': 'Verification email sent.'})
 
@@ -142,12 +152,11 @@ class ForgotPasswordView(generics.GenericAPIView):
             user = User.objects.get(email=email)
             user.generate_reset_token()
             reset_url = f"{settings.FRONTEND_URL}/reset-password/{user.reset_token}"
-            send_mail(
+            _send_email_async(
                 subject='Reset your TRIVÉ password',
                 message=f'Hi {user.first_name},\n\nReset your password: {reset_url}\n\nThis link expires in 1 hour.',
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
-                fail_silently=True,
             )
         except User.DoesNotExist:
             pass  # Don't reveal if email exists
