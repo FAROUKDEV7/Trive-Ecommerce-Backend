@@ -333,3 +333,9 @@ CLOUDINARY_STORAGE = {
     "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
     "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
 }
+
+
+CSRF_TRUSTED_ORIGINS = [
+    os.environ.get("BACKEND_URL"),
+    os.environ.get("FRONTEND_URL"),
+]
